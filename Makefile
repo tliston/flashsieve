@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -O3 -march=native -Wall -Wextra -fopenmp -funroll-loops
 LDFLAGS = -lm -fopenmp
 
-TARGET = test
+TARGET = flashsieve
 SRCS = $(wildcard *.c)
 OBJS = $(SRCS:.c=.o)
 

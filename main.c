@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
     uint32_t* base_primes = generate_base_primes(limit, &base_prime_count);
 
     // Count 2, 3, 5 manually since the Mod 30 wheel entirely skips them
-    uint64_t total_primes = (limit >= 5) ? 3 : 0; 
+    uint64_t total_primes = (limit >= 5) ? 2 : 0; 
     // Calculate the block size per thread to ensure contiguous state-machine execution
     int num_threads = omp_get_max_threads();
     printf("Number of threads: %i\n", num_threads);
@@ -76,48 +76,53 @@ int main(int argc, char** argv) {
         }        
         // Only spin up work if this thread actually has segments assigned to it
         if (start_seg < total_segments) {
-            SieveSegment* seg = create_segment(segment_bytes);
-            SievingPrime* small_primes = (SievingPrime*)malloc(base_prime_count * sizeof(SievingPrime));
-            uint64_t thread_start_val = start_seg * numbers_per_segment;
-
-            // --- THE ONE-TIME INITIALIZATION ---
-            // Division and modulo ONLY happen here, once per thread, right at startup.
-            size_t p_idx = 0;
-            for (size_t i = 0; i < base_prime_count; i++) {
-                uint32_t p = base_primes[i];
-                if (p <= 5) continue; 
-
-                uint8_t k_residue = 0;
-                uint64_t first_multiple = calculate_first_valid_multiple(p, thread_start_val, &k_residue);
-                
-                uint64_t offset = first_multiple - thread_start_val;
-                
-                small_primes[p_idx].prime_k = p / 30;
-                small_primes[p_idx].prime_bit_idx = map_remainder_to_bit_idx(p % 30);
-                small_primes[p_idx].byte_index = offset / 30;
-                small_primes[p_idx].bit_index = map_remainder_to_bit_idx(first_multiple % 30);
-                small_primes[p_idx].wheel_index = map_remainder_to_bit_idx(k_residue);
-                p_idx++;
-            }
-            size_t valid_prime_count = p_idx;
-            // --- THE ZERO-DIVISION SIEVING ENGINE ---
-            // This loop runs millions of times using ONLY addition, subtraction, 
-            // bitwise AND, and L1 cache lookups. The prime's byte_index naturally
-            // carries over from segment to segment.
+            SieveSegment* seg = create_segment(segment_bytes);            
+            // We still allocate enough space for all base primes, 
+            // but we don't initialize them yet.
+            SievingPrime* active_primes = (SievingPrime*)malloc(base_prime_count * sizeof(SievingPrime));            
+            size_t active_prime_count = 0;
+            size_t next_base_prime_idx = 0;
+            // Skip 2, 3, and 5 just like before
+            while (next_base_prime_idx < base_prime_count && base_primes[next_base_prime_idx] <= 5)
+                next_base_prime_idx++;
+            // --- THE DYNAMIC SIEVING ENGINE ---
             for (uint64_t seg_idx = start_seg; seg_idx < end_seg; seg_idx++) {                
-                // 0xFF means all bits are 1 (all numbers are prime until crossed off)
-                memset(seg->array, 0xFF, segment_bytes); 
-                for (size_t i = 0; i < valid_prime_count; i++) {
-                    cross_off_multiples_fast(seg->array, segment_bytes, &small_primes[i]);
+                uint64_t absolute_seg_start = seg_idx * numbers_per_segment;
+                uint64_t absolute_seg_end = absolute_seg_start + numbers_per_segment;
+                // 1. ACTIVATE PENDING PRIMES
+                // If the next prime's square falls within or before this segment, activate it!
+                while (next_base_prime_idx < base_prime_count) {
+                    uint32_t p = base_primes[next_base_prime_idx];
+                    uint64_t p_squared = (uint64_t)p * p;                    
+                    // If p^2 is beyond the end of this segment, stop activating.
+                    if (p_squared >= absolute_seg_end)
+                        break; 
+                    // Do the heavy initialization math ONLY when the prime is needed
+                    uint8_t k_residue = 0;
+                    uint64_t first_multiple = calculate_first_valid_multiple(p, absolute_seg_start, &k_residue);
+                    uint64_t offset = first_multiple - absolute_seg_start;                    
+                    active_primes[active_prime_count].prime_k = p / 30;
+                    active_primes[active_prime_count].prime_bit_idx = map_remainder_to_bit_idx(p % 30);
+                    active_primes[active_prime_count].byte_index = offset / 30;
+                    active_primes[active_prime_count].bit_index = map_remainder_to_bit_idx(first_multiple % 30);
+                    active_primes[active_prime_count].wheel_index = map_remainder_to_bit_idx(k_residue);                    
+                    active_prime_count++;
+                    next_base_prime_idx++;
                 }
-                // If this is the absolute final segment of the entire program, mask it
+                // 2. THE INNER LOOP
+                // Set all bits to 1
+                memset(seg->array, 0xFF, segment_bytes); 
+                // We now ONLY loop over primes that are mathematically active
+                for (size_t i = 0; i < active_prime_count; i++) {
+                    cross_off_multiples_fast(seg->array, segment_bytes, &active_primes[i]);
+                }
+                // 3. MASK AND COUNT
                 if (seg_idx == total_segments - 1) {
-                    uint64_t absolute_seg_start = seg_idx * numbers_per_segment;
                     mask_last_segment(seg->array, segment_bytes, limit, absolute_seg_start);
                 }
                 total_primes += count_primes_fast(seg->array, segment_bytes);
             }
-            free(small_primes);
+            free(active_primes);
             free_segment(seg);
         }
     }
