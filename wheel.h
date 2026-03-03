@@ -11,12 +11,15 @@ typedef struct {
 
 // The state of a prime as it moves through the sieve
 typedef struct {
-    uint32_t prime_k;
-    uint8_t  prime_bit_idx;
-    uint32_t byte_index;
-    uint8_t  bit_index;
-    uint8_t  wheel_index;
-} SievingPrime;
+    uint32_t byte_index;     // 4 bytes
+    uint8_t  bit_index;      // 1 byte
+    uint8_t  wheel_index;    // 1 byte
+    uint8_t  pad[2];         // 2 bytes (Memory alignment padding)    
+    // Precomputed jump arrays (no more math in the inner loop!)
+    uint32_t jumps[8];       // 32 bytes
+    uint8_t  next_bits[8];   // 8 bytes
+} SievingPrime; 
+// Total Size: 48 bytes (Fits completely in a 64-byte cache line)
 
 extern const WheelItem wheel_table[8][8];
 extern const uint8_t wheel_gaps[8];

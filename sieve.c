@@ -25,17 +25,17 @@ void cross_off_multiples_fast(uint8_t* segment_array, uint32_t segment_bytes, Si
     uint32_t byte_idx  = sp->byte_index;
     uint8_t  bit_idx   = sp->bit_index;
     uint8_t  wheel_idx = sp->wheel_index;
-    uint32_t p_k = sp->prime_k;
-    const WheelItem* precomputed_row = wheel_table[sp->prime_bit_idx];
 
     while (byte_idx < segment_bytes) {
-        segment_array[byte_idx] &= unset_bit[bit_idx];
-        WheelItem jump_info = precomputed_row[wheel_idx];
-        byte_idx += (wheel_gaps[wheel_idx] * p_k) + jump_info.byte_offset;
-        bit_idx = jump_info.next_bit_idx;
+        // 1. Cross off the bit
+        segment_array[byte_idx] &= unset_bit[bit_idx];        
+        // 2. Fetch the precomputed jump and next bit directly from the struct
+        byte_idx += sp->jumps[wheel_idx];
+        bit_idx = sp->next_bits[wheel_idx];
+        
+        // 3. Advance the wheel
         wheel_idx = (wheel_idx + 1) & 7; 
     }
-
     sp->byte_index  = byte_idx - segment_bytes;
     sp->bit_index   = bit_idx;
     sp->wheel_index = wheel_idx;

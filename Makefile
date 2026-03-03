@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS = -O3 -march=native -Wall -Wextra -fopenmp -funroll-loops
-LDFLAGS = -lm -fopenmp
+LDFLAGS = -lm -s -fopenmp
 
 TARGET = flashsieve
 SRCS = $(wildcard *.c)

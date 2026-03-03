@@ -46,7 +46,7 @@ uint8_t map_remainder_to_bit_idx(uint32_t remainder) {
 }
 
 uint64_t calculate_first_valid_multiple(uint32_t p, uint64_t chunk_start_val, uint8_t* out_k_residue) {
-    if (chunk_start_val == 0) chunk_start_val = p * p;
+    if (chunk_start_val == 0) chunk_start_val = (uint64_t)p * p;
     uint64_t k = (chunk_start_val + p - 1) / p;
     if (k < p) k = p;    
     while (k % 2 == 0 || k % 3 == 0 || k % 5 == 0) {
