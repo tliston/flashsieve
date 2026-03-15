@@ -76,42 +76,11 @@ void free_bucket_pool(BucketPool* pool) {
     }
 }
 
-// O(1) allocation - Grab a node from the free list, or allocate a new one
-BucketNode* get_node_from_pool(BucketPool* pool) {
-    // 1. Try to recycle a free node first (This is lightning fast)
-    if (pool->free_list != NULL) {
-        BucketNode* recycled_node = pool->free_list;
-        pool->free_list = pool->free_list->next;
-        recycled_node->next = NULL;
-        // (recycled_node->count is already 0 from when it was returned)
-        return recycled_node;
-    }
-    
-    // 2. Otherwise, allocate a fresh one from the continuous block
-    if (pool->current_node >= pool->total_nodes) {
-        fprintf(stderr, "Fatal: Bucket pool exhausted!\n");
-        exit(EXIT_FAILURE);
-    }
-    return &pool->memory[pool->current_node++];
-}
-
 // O(1) recycling - Wipe the node and push it to the top of the free list
 inline void return_node_to_pool(BucketPool* pool, BucketNode* node) {
     node->count = 0; // Wipe it clean for its next life
     node->next = pool->free_list;
     pool->free_list = node;
-}
-
-// O(1) routing - drop a prime into the correct future bucket
-void push_to_bucket(BucketList* list, SievingPrime sp, BucketPool* pool) {
-    // If the list is empty or the current head node is full, grab a new node
-    if (list->head == NULL || list->head->count == BUCKET_CAPACITY) {
-        BucketNode* new_node = get_node_from_pool(pool);
-        new_node->next = list->head;
-        list->head = new_node;
-    }   
-    BucketNode* head = list->head;
-    head->primes[head->count++] = sp;
 }
 
 // Declare the 8 generated functions so this file knows they exist

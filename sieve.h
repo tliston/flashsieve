@@ -40,12 +40,31 @@ typedef struct {
     uint32_t current_node;
 } BucketPool;
 
+static inline BucketNode* get_node_from_pool(BucketPool* pool) {
+    if (pool->free_list != NULL) {
+        BucketNode* recycled_node = pool->free_list;
+        pool->free_list = pool->free_list->next;
+        recycled_node->next = NULL;
+        return recycled_node;
+    }
+    return &pool->memory[pool->current_node++];
+}
+
+static inline void push_to_bucket(BucketList* list, SievingPrime sp, BucketPool* pool) {
+    if (list->head == NULL || list->head->count == BUCKET_CAPACITY) {
+        BucketNode* new_node = get_node_from_pool(pool);
+        new_node->next = list->head;
+        list->head = new_node;
+    }
+    BucketNode* head = list->head;
+    head->primes[head->count++] = sp;
+}
+
 void return_node_to_pool(BucketPool* pool, BucketNode* node);
 SieveSegment* create_segment(size_t cache_size);
 void free_segment(SieveSegment* seg);
 BucketPool* create_bucket_pool(uint32_t num_nodes);
 void mask_last_segment(uint8_t* segment_array, uint32_t segment_bytes, uint64_t limit, uint64_t segment_start_val);
 uint64_t count_primes_fast(const uint8_t* segment_array, uint32_t segment_bytes);
-void push_to_bucket(BucketList* list, SievingPrime sp, BucketPool* pool);
 void free_bucket_pool(BucketPool* pool);
 #endif // SIEVE_H

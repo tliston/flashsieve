@@ -58,7 +58,17 @@ int main(int argc, char** argv) {
     double start_time = omp_get_wtime();
 
     size_t l1_cache_size = get_min_cache_size(1);
-    uint64_t segment_bytes = l1_cache_size;
+    
+    // Force segment_bytes down to the nearest Power of 2
+    uint64_t segment_bytes = 1;
+    while (segment_bytes * 2 <= l1_cache_size) segment_bytes *= 2;
+
+    printf("Segment size: %lu\n", segment_bytes);
+    
+    // Precalculate the bitwise shift and mask values
+    uint32_t seg_shift = __builtin_ctz(segment_bytes); // For 32768, returns 15
+    uint32_t seg_mask = segment_bytes - 1;             // For 32768, returns 32767
+
     uint64_t numbers_per_segment = segment_bytes * 30; 
     uint64_t total_segments = (limit / numbers_per_segment) + 1;
 
@@ -132,8 +142,11 @@ int main(int argc, char** argv) {
                     }
                     next_base_prime_idx++;
                 }
-                memset(seg->array, 0xFF, segment_bytes);
 
+                memset(seg->array, 0xFF, segment_bytes); 
+                // 1 is not a prime! Cross off Bit 0 of Byte 0.
+                if (seg_idx == 0) seg->array[0] &= 0xFE;
+                
                 // 2. ERAT SMALL (Duff's Device Unrolled Loops)
                 for (size_t i = 0; i < active_small_count; i++) {
                     SievingPrime* sp = &active_small_primes[i];
@@ -151,11 +164,11 @@ int main(int argc, char** argv) {
                         uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];
                         sp.byte_index += jump;
                         sp.wheel_index = (sp.wheel_index + 1) & 7;
-                        // Route to future segment bucket
-                        uint32_t segments_jumped = sp.byte_index / segment_bytes;
+                        // Route to future segment bucket (ZERO DIVISION!)
+                        uint32_t segments_jumped = sp.byte_index >> seg_shift;
                         uint64_t target_local_seg = local_seg_idx + segments_jumped;
                         if (target_local_seg < thread_segment_count) {
-                            sp.byte_index %= segment_bytes; 
+                            sp.byte_index &= seg_mask; // Bitwise Modulo
                             push_to_bucket(&medium_buckets[target_local_seg], sp, pool);
                         }
                     }
