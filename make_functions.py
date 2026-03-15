@@ -5,9 +5,6 @@ wheel_gaps = [6, 4, 2, 4, 2, 4, 6, 2]
 
 print('#include "wheel.h"\n')
 
-valid_residues = [1, 7, 11, 13, 17, 19, 23, 29]
-wheel_gaps = [6, 4, 2, 4, 2, 4, 6, 2]
-
 for p_idx, p_rem in enumerate(valid_residues):
     print(f"/**\n * Pattern {p_idx}: For primes where MOD30(p) == {p_rem}\n */")
     print(f"void cross_off_residue{p_rem}(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp) {{")
@@ -42,14 +39,18 @@ for p_idx, p_rem in enumerate(valid_residues):
     print("        }")
     print("        sp->wheel_index = 0;")
     print("    }\n")
-    print("    // 3. THE TAIL END: Process remaining hits safely")
-    print("    while (byte_idx < size) {")
-    print("        switch (sp->wheel_index) {")   
-    for w_idx in range(8):
-        next_w = (w_idx + 1) % 8
-        print(f"            case {w_idx}: segment[byte_idx] &= 0x{masks[w_idx]:02X}; byte_idx += j{w_idx}; sp->wheel_index = {next_w}; break;")
-    print("        }")
+    print("    // 3. THE TAIL END: Flattened to eliminate branch misprediction")
+    print("    switch (sp->wheel_index) {")
+    for start_case in range(8):
+        print(f"        case {start_case}:")
+        for step in range(8):
+            w_idx = (start_case + step) % 8
+            next_w = (w_idx + 1) % 8
+            print(f"            if (byte_idx >= size) goto end_sieve;")
+            print(f"            segment[byte_idx] &= 0x{masks[w_idx]:02X}; byte_idx += j{w_idx}; sp->wheel_index = {next_w};")
+        print("            break;")
     print("    }\n")
+    print("end_sieve:")
     print("    // 4. Save the exact byte coordinates for the next segment")
     print("    sp->byte_index = byte_idx - size;")
     print("}\n")
