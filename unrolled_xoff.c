@@ -45,16 +45,18 @@ void cross_off_residue1(uint8_t *restrict segment, uint32_t size, SievingPrime *
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xFE; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xFD; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xFB; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xF7; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xEF; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xDF; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xBF; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0x7F; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -106,16 +108,18 @@ void cross_off_residue7(uint8_t *restrict segment, uint32_t size, SievingPrime *
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xFD; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xDF; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xEF; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xFE; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0x7F; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xF7; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xFB; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xBF; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -167,16 +171,18 @@ void cross_off_residue11(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xFB; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xEF; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xFE; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xBF; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xFD; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0x7F; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xF7; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xDF; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -228,16 +234,18 @@ void cross_off_residue13(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xF7; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xFE; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xBF; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xDF; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xFB; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xFD; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0x7F; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xEF; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -289,16 +297,18 @@ void cross_off_residue17(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xEF; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0x7F; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xFD; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xFB; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xDF; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xBF; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xFE; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xF7; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -350,16 +360,18 @@ void cross_off_residue19(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xDF; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xF7; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0x7F; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xFD; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xBF; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xFE; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xEF; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xFB; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -411,16 +423,18 @@ void cross_off_residue23(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0xBF; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xFB; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xF7; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0x7F; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xFE; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xEF; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xDF; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xFD; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
@@ -472,16 +486,18 @@ void cross_off_residue29(uint8_t *restrict segment, uint32_t size, SievingPrime 
         sp->wheel_index = 0;
     }
 
-    // 3. THE TAIL END: Process remaining hits and save the exit state
-    switch (sp->wheel_index) {
-        case 0: if (byte_idx < size) { segment[byte_idx] &= 0x7F; byte_idx += j0; sp->wheel_index = 1; } else break;
-        case 1: if (byte_idx < size) { segment[byte_idx] &= 0xBF; byte_idx += j1; sp->wheel_index = 2; } else break;
-        case 2: if (byte_idx < size) { segment[byte_idx] &= 0xDF; byte_idx += j2; sp->wheel_index = 3; } else break;
-        case 3: if (byte_idx < size) { segment[byte_idx] &= 0xEF; byte_idx += j3; sp->wheel_index = 4; } else break;
-        case 4: if (byte_idx < size) { segment[byte_idx] &= 0xF7; byte_idx += j4; sp->wheel_index = 5; } else break;
-        case 5: if (byte_idx < size) { segment[byte_idx] &= 0xFB; byte_idx += j5; sp->wheel_index = 6; } else break;
-        case 6: if (byte_idx < size) { segment[byte_idx] &= 0xFD; byte_idx += j6; sp->wheel_index = 7; } else break;
-        case 7: if (byte_idx < size) { segment[byte_idx] &= 0xFE; byte_idx += j7; sp->wheel_index = 0; } else break;
+    // 3. THE TAIL END: Process remaining hits safely
+    while (byte_idx < size) {
+        switch (sp->wheel_index) {
+            case 0: segment[byte_idx] &= 0x7F; byte_idx += j0; sp->wheel_index = 1; break;
+            case 1: segment[byte_idx] &= 0xBF; byte_idx += j1; sp->wheel_index = 2; break;
+            case 2: segment[byte_idx] &= 0xDF; byte_idx += j2; sp->wheel_index = 3; break;
+            case 3: segment[byte_idx] &= 0xEF; byte_idx += j3; sp->wheel_index = 4; break;
+            case 4: segment[byte_idx] &= 0xF7; byte_idx += j4; sp->wheel_index = 5; break;
+            case 5: segment[byte_idx] &= 0xFB; byte_idx += j5; sp->wheel_index = 6; break;
+            case 6: segment[byte_idx] &= 0xFD; byte_idx += j6; sp->wheel_index = 7; break;
+            case 7: segment[byte_idx] &= 0xFE; byte_idx += j7; sp->wheel_index = 0; break;
+        }
     }
 
     // 4. Save the exact byte coordinates for the next segment
