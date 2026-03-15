@@ -10,6 +10,9 @@
 #include "wheel.h"
 #include "sieve.h"
 
+extern const uint8_t mask_table[8][8];
+extern const uint8_t offset_table[8][8];
+
 // Simple odds-only sieve to get our base primes up to sqrt(N)
 uint32_t* generate_base_primes(uint64_t max_val, size_t* out_count) {
     uint64_t limit = (uint64_t)sqrt((double)max_val);
@@ -45,9 +48,11 @@ uint32_t* generate_base_primes(uint64_t max_val, size_t* out_count) {
 }
 
 int main(int argc, char** argv) {
-    uint64_t limit = 10000000000UL; // Default to 10 billion
-    if (argc > 1)
+    uint64_t limit = 10000000000ULL; 
+    if (argc > 1) {
         limit = strtoull(argv[1], NULL, 10);
+    }
+
     setlocale(LC_ALL, "");    
     printf("Sieving to: %'lu\n", limit);
     double start_time = omp_get_wtime();
@@ -56,76 +61,120 @@ int main(int argc, char** argv) {
     uint64_t segment_bytes = l1_cache_size;
     uint64_t numbers_per_segment = segment_bytes * 30; 
     uint64_t total_segments = (limit / numbers_per_segment) + 1;
+
     size_t base_prime_count = 0;
     uint32_t* base_primes = generate_base_primes(limit, &base_prime_count);
 
-    // Count 2, 3, 5 manually since the Mod 30 wheel entirely skips them
-    uint64_t total_primes = (limit >= 5) ? 2 : 0; 
-    // Calculate the block size per thread to ensure contiguous state-machine execution
+    uint64_t total_primes = (limit >= 5) ? 3 : 0; 
+    
+    // The mathematical boundary between Duff's Device and the Bucket Pool
+    uint32_t small_prime_threshold = (segment_bytes * 30) / 6;
+
     int num_threads = omp_get_max_threads();
-    printf("Number of threads: %i\n", num_threads);
+    printf("Threads: %u\n", num_threads);
     uint64_t segments_per_thread = (total_segments + num_threads - 1) / num_threads;
-    // We use OpenMP to spawn the threads, but WE manually control their start/stop bounds
+
     #pragma omp parallel reduction(+:total_primes)
     {
-        int thread_id = omp_get_thread_num();       
+        int thread_id = omp_get_thread_num();
         uint64_t start_seg = thread_id * segments_per_thread;
         uint64_t end_seg = start_seg + segments_per_thread;
-        if (end_seg > total_segments) {
-            end_seg = total_segments;
-        }        
-        // Only spin up work if this thread actually has segments assigned to it
+        if (end_seg > total_segments) end_seg = total_segments;
+        
         if (start_seg < total_segments) {
-            SieveSegment* seg = create_segment(segment_bytes);            
-            // We still allocate enough space for all base primes, 
-            // but we don't initialize them yet.
-            SievingPrime* active_primes = (SievingPrime*)malloc(base_prime_count * sizeof(SievingPrime));            
-            size_t active_prime_count = 0;
+            uint64_t thread_segment_count = end_seg - start_seg;
+            SieveSegment* seg = create_segment(segment_bytes);
+            
+            // Allocate memory for the two active groups
+            SievingPrime* active_small_primes = (SievingPrime*)malloc(base_prime_count * sizeof(SievingPrime));
+            BucketList* medium_buckets = (BucketList*)calloc(thread_segment_count, sizeof(BucketList));
+            BucketPool* pool = create_bucket_pool(100000); // Massive block of recycled memory
+            
+            size_t active_small_count = 0;
             size_t next_base_prime_idx = 0;
-            // Skip 2, 3, and 5 just like before
-            while (next_base_prime_idx < base_prime_count && base_primes[next_base_prime_idx] <= 5)
+
+            // Skip 2, 3, and 5
+            while (next_base_prime_idx < base_prime_count && base_primes[next_base_prime_idx] <= 5) {
                 next_base_prime_idx++;
-            // --- THE DYNAMIC SIEVING ENGINE ---
-            for (uint64_t seg_idx = start_seg; seg_idx < end_seg; seg_idx++) {                
+            }
+
+            for (uint64_t seg_idx = start_seg; seg_idx < end_seg; seg_idx++) {
                 uint64_t absolute_seg_start = seg_idx * numbers_per_segment;
                 uint64_t absolute_seg_end = absolute_seg_start + numbers_per_segment;
-                // 1. ACTIVATE PENDING PRIMES
-                // If the next prime's square falls within or before this segment, activate it!
+                uint64_t local_seg_idx = seg_idx - start_seg;
+
+                // 1. ACTIVATE PENDING PRIMES AND FORK THE ROAD
                 while (next_base_prime_idx < base_prime_count) {
                     uint32_t p = base_primes[next_base_prime_idx];
-                    uint64_t p_squared = (uint64_t)p * p;                    
-                    // If p^2 is beyond the end of this segment, stop activating.
-                    if (p_squared >= absolute_seg_end)
-                        break; 
-                    // Do the heavy initialization math ONLY when the prime is needed
+                    uint64_t p_squared = (uint64_t)p * p;
+
+                    if (p_squared >= absolute_seg_end) break; 
                     uint8_t k_residue = 0;
                     uint64_t first_multiple = calculate_first_valid_multiple(p, absolute_seg_start, &k_residue);
                     uint64_t offset = first_multiple - absolute_seg_start;
-
-                    active_primes[active_prime_count].prime_k = p / 30;
-                    active_primes[active_prime_count].byte_index = offset / 30;
-                    active_primes[active_prime_count].prime_bit_idx = map_remainder_to_bit_idx(p % 30);
-                    active_primes[active_prime_count].wheel_index = map_remainder_to_bit_idx(k_residue);
-
-                    active_prime_count++;
+                    SievingPrime sp;
+                    sp.prime_k = p / 30;
+                    sp.prime_bit_idx = map_remainder_to_bit_idx(p % 30);
+                    sp.wheel_index = map_remainder_to_bit_idx(k_residue);
+                    if (p <= small_prime_threshold) {
+                        // EratSmall: Map byte index local to the current segment
+                        sp.byte_index = offset / 30;
+                        active_small_primes[active_small_count++] = sp;
+                    } else {
+                        // EratMedium: Map byte index local to its FUTURE target segment
+                        uint64_t relative_start = first_multiple - (start_seg * numbers_per_segment);
+                        uint64_t target_local_seg = (relative_start / 30) / segment_bytes;
+                        
+                        if (target_local_seg < thread_segment_count) {
+                            sp.byte_index = (relative_start / 30) % segment_bytes;
+                            push_to_bucket(&medium_buckets[target_local_seg], sp, pool);
+                        }
+                    }
                     next_base_prime_idx++;
                 }
-                // 2. THE INNER LOOP
-                // Set all bits to 1
-                memset(seg->array, 0xFF, segment_bytes); 
-                // We now ONLY loop over primes that are mathematically active
-                for (size_t i = 0; i < active_prime_count; i++) {
-                    SievingPrime* sp = &active_primes[i];
-                    // Call the specific unrolled function for this prime's pattern!
+                memset(seg->array, 0xFF, segment_bytes);
+
+                // 2. ERAT SMALL (Duff's Device Unrolled Loops)
+                for (size_t i = 0; i < active_small_count; i++) {
+                    SievingPrime* sp = &active_small_primes[i];
                     cross_off_funcs[sp->prime_bit_idx](seg->array, segment_bytes, sp);
                 }
-                // 3. MASK AND COUNT
+                
+                // 3. ERAT MEDIUM (Branchless Bucket Logic + Zero-Latency Recycling)
+                BucketNode* current_node = medium_buckets[local_seg_idx].head;
+                while (current_node != NULL) {
+                    for (uint32_t i = 0; i < current_node->count; i++) {
+                        SievingPrime sp = current_node->primes[i];
+                        // Branchless cross-off
+                        seg->array[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];
+                        // Branchless jump calculation
+                        uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];
+                        sp.byte_index += jump;
+                        sp.wheel_index = (sp.wheel_index + 1) & 7;
+                        // Route to future segment bucket
+                        uint32_t segments_jumped = sp.byte_index / segment_bytes;
+                        uint64_t target_local_seg = local_seg_idx + segments_jumped;
+                        if (target_local_seg < thread_segment_count) {
+                            sp.byte_index %= segment_bytes; 
+                            push_to_bucket(&medium_buckets[target_local_seg], sp, pool);
+                        }
+                    }
+                    // Memory Recycling
+                    BucketNode* next_node = current_node->next;
+                    return_node_to_pool(pool, current_node);
+                    current_node = next_node;
+                }
+                // Explicitly nullify this segment's head to prevent dirty pointer re-use
+                medium_buckets[local_seg_idx].head = NULL;
+                // 4. MASK AND COUNT
                 if (seg_idx == total_segments - 1) {
                     mask_last_segment(seg->array, segment_bytes, limit, absolute_seg_start);
                 }
                 total_primes += count_primes_fast(seg->array, segment_bytes);
             }
-            free(active_primes);
+            free(active_small_primes);
+            free(medium_buckets);
+            free_bucket_pool(pool);
             free_segment(seg);
         }
     }

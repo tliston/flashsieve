@@ -1,6 +1,118 @@
-#include "sieve.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include "sieve.h"
+#include "wheel.h"
+
+// Memory masks for clearing the exact bit in the Medium buckets
+const uint8_t mask_table[8][8] = {
+    { 0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F }, // Prime residue 1
+    { 0xFD, 0xDF, 0xEF, 0xFE, 0x7F, 0xF7, 0xFB, 0xBF }, // Prime residue 7
+    { 0xFB, 0xEF, 0xFE, 0xBF, 0xFD, 0x7F, 0xF7, 0xDF }, // Prime residue 11
+    { 0xF7, 0xFE, 0xBF, 0xDF, 0xFB, 0xFD, 0x7F, 0xEF }, // Prime residue 13
+    { 0xEF, 0x7F, 0xFD, 0xFB, 0xDF, 0xBF, 0xFE, 0xF7 }, // Prime residue 17
+    { 0xDF, 0xF7, 0x7F, 0xFD, 0xBF, 0xFE, 0xEF, 0xFB }, // Prime residue 19
+    { 0xBF, 0xFB, 0xF7, 0x7F, 0xFE, 0xEF, 0xDF, 0xFD }, // Prime residue 23
+    { 0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE }, // Prime residue 29
+};
+
+// Byte offsets for the next jump calculation (Carry-over math)
+const uint8_t offset_table[8][8] = {
+    { 0, 0, 0, 0, 0, 0, 0, 1 }, // Prime residue 1
+    { 1, 1, 1, 0, 1, 1, 1, 1 }, // Prime residue 7
+    { 2, 2, 0, 2, 0, 2, 2, 1 }, // Prime residue 11
+    { 3, 1, 1, 2, 1, 1, 3, 1 }, // Prime residue 13
+    { 3, 3, 1, 2, 1, 3, 3, 1 }, // Prime residue 17
+    { 4, 2, 2, 2, 2, 2, 4, 1 }, // Prime residue 19
+    { 5, 3, 1, 4, 1, 3, 5, 1 }, // Prime residue 23
+    { 6, 4, 2, 4, 2, 4, 6, 1 }, // Prime residue 29
+};
+
+void process_medium_bucket(uint8_t* restrict segment, BucketList* list, BucketList* next_segment_buckets, uint64_t segment_bytes, BucketPool *pool) {
+    BucketNode* current_node = list->head;
+    
+    // Iterate through the linked list of bucket nodes
+    while (current_node != NULL) {
+        // Process the 1024 primes inside this node in a tight, branchless loop
+        for (uint32_t i = 0; i < current_node->count; i++) {
+            SievingPrime sp = current_node->primes[i];            
+            // 1. One-shot cross-off (Branchless!)
+            segment[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];            
+            // 2. Calculate the next jump (Branchless!)
+            uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];            
+            // 3. Update state
+            sp.byte_index += jump;
+            sp.wheel_index = (sp.wheel_index + 1) & 7; // Fast modulo 8            
+            // 4. Calculate which future segment this lands in
+            uint32_t future_segment = sp.byte_index / segment_bytes;
+            sp.byte_index %= segment_bytes; // Localize byte index to that future segment
+            // 5. Push to the correct future bucket
+            push_to_bucket(&next_segment_buckets[future_segment], sp, pool);
+        }
+        current_node = current_node->next;
+    }
+}
+
+BucketPool* create_bucket_pool(uint32_t num_nodes) {
+    BucketPool* pool = (BucketPool*)malloc(sizeof(BucketPool));
+    if (!pool) return NULL;
+    
+    // Allocate all nodes in one massive, contiguous block of RAM
+    pool->memory = (BucketNode*)calloc(num_nodes, sizeof(BucketNode));
+    if (!pool->memory) {
+        free(pool);
+        return NULL;
+    }
+    pool->total_nodes = num_nodes;
+    pool->current_node = 0;
+    return pool;
+}
+
+void free_bucket_pool(BucketPool* pool) {
+    if (pool) {
+        free(pool->memory);
+        free(pool);
+    }
+}
+
+// O(1) allocation - Grab a node from the free list, or allocate a new one
+BucketNode* get_node_from_pool(BucketPool* pool) {
+    // 1. Try to recycle a free node first (This is lightning fast)
+    if (pool->free_list != NULL) {
+        BucketNode* recycled_node = pool->free_list;
+        pool->free_list = pool->free_list->next;
+        recycled_node->next = NULL;
+        // (recycled_node->count is already 0 from when it was returned)
+        return recycled_node;
+    }
+    
+    // 2. Otherwise, allocate a fresh one from the continuous block
+    if (pool->current_node >= pool->total_nodes) {
+        fprintf(stderr, "Fatal: Bucket pool exhausted!\n");
+        exit(EXIT_FAILURE);
+    }
+    return &pool->memory[pool->current_node++];
+}
+
+// O(1) recycling - Wipe the node and push it to the top of the free list
+inline void return_node_to_pool(BucketPool* pool, BucketNode* node) {
+    node->count = 0; // Wipe it clean for its next life
+    node->next = pool->free_list;
+    pool->free_list = node;
+}
+
+// O(1) routing - drop a prime into the correct future bucket
+void push_to_bucket(BucketList* list, SievingPrime sp, BucketPool* pool) {
+    // If the list is empty or the current head node is full, grab a new node
+    if (list->head == NULL || list->head->count == BUCKET_CAPACITY) {
+        BucketNode* new_node = get_node_from_pool(pool);
+        new_node->next = list->head;
+        list->head = new_node;
+    }   
+    BucketNode* head = list->head;
+    head->primes[head->count++] = sp;
+}
 
 // Declare the 8 generated functions so this file knows they exist
 extern void cross_off_residue1(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
@@ -23,8 +135,6 @@ const CrossOffFunc cross_off_funcs[8] = {
     cross_off_residue23, // Index 6
     cross_off_residue29  // Index 7
 };
-
-// (You can completely delete the old cross_off_multiples_fast function from this file!)
 
 SieveSegment* create_segment(size_t cache_size) {
     SieveSegment* seg = (SieveSegment*)malloc(sizeof(SieveSegment));
