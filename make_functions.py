@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+valid_residues = [1, 7, 11, 13, 17, 19, 23, 29]
+wheel_gaps = [6, 4, 2, 4, 2, 4, 6, 2]
+
+print('#include "wheel.h"\n')
+
+for p_idx, p_rem in enumerate(valid_residues):
+    print(f"/**\n * Pattern {p_idx}: For primes where MOD30(p) == {p_rem}\n */")
+    print(f"void cross_off_residue{p_rem}(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp) {{")
+    print("    uint32_t p_k = sp->prime_k;")
+    print("    uint32_t byte_idx = sp->byte_index;\n")
+    
+    print("    // 1. Precalculate the 8 byte-jumps for a full wheel rotation.")
+    
+    masks = []
+    for w_idx in range(8):
+        k_rem = valid_residues[w_idx]
+        gap = wheel_gaps[w_idx]
+        
+        # The exact bit to clear based on the current multiple's residue
+        current_rem = (p_rem * k_rem) % 30
+        bit_idx = valid_residues.index(current_rem)
+        mask = (~(1 << bit_idx)) & 0xFF
+        masks.append(mask)
+        
+        # The mathematically perfect byte offset (accounts for carry-over!)
+        byte_offset = (current_rem + (p_rem * gap)) // 30
+        
+        print(f"    uint32_t j{w_idx} = p_k * {gap} + {byte_offset};")
+        
+    print(f"\n    uint32_t p = (p_k * 30) + {p_rem};")
+    print("    uint32_t safe_limit = (size >= p) ? size - p : 0;\n")
+    
+    print("    // 2. DUFF'S DEVICE: Jump into the loop at the exact wheel_index")
+    print("    if (byte_idx < safe_limit) {")
+    print("        switch (sp->wheel_index) {")
+    print("            case 0:")
+    print("                do {")
+    
+    for w_idx in range(8):
+        case_str = f"            case {w_idx}:" if w_idx > 0 else "                   "
+        print(f"{case_str} segment[byte_idx] &= 0x{masks[w_idx]:02X}; byte_idx += j{w_idx};")
+        if(w_idx < 7):
+            print("            // fall through") 
+    print("                } while (byte_idx < safe_limit);")
+    print("        }")
+    print("        sp->wheel_index = 0;")
+    print("    }\n")
+    
+    print("    // 3. THE TAIL END: Process remaining hits and save the exit state")
+    print("    switch (sp->wheel_index) {")
+    
+    for w_idx in range(8):
+        next_w = (w_idx + 1) % 8
+        print(f"        case {w_idx}: if (byte_idx < size) {{ segment[byte_idx] &= 0x{masks[w_idx]:02X}; byte_idx += j{w_idx}; sp->wheel_index = {next_w}; }} else break;")
+        
+    print("    }\n")
+    print("    // 4. Save the exact byte coordinates for the next segment")
+    print("    sp->byte_index = byte_idx - size;")
+    print("}\n")
