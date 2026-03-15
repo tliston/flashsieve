@@ -29,31 +29,6 @@ const uint8_t offset_table[8][8] = {
     { 6, 4, 2, 4, 2, 4, 6, 1 }, // Prime residue 29
 };
 
-void process_medium_bucket(uint8_t* restrict segment, BucketList* list, BucketList* next_segment_buckets, uint64_t segment_bytes, BucketPool *pool) {
-    BucketNode* current_node = list->head;
-    
-    // Iterate through the linked list of bucket nodes
-    while (current_node != NULL) {
-        // Process the 1024 primes inside this node in a tight, branchless loop
-        for (uint32_t i = 0; i < current_node->count; i++) {
-            SievingPrime sp = current_node->primes[i];            
-            // 1. One-shot cross-off (Branchless!)
-            segment[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];            
-            // 2. Calculate the next jump (Branchless!)
-            uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];            
-            // 3. Update state
-            sp.byte_index += jump;
-            sp.wheel_index = (sp.wheel_index + 1) & 7; // Fast modulo 8            
-            // 4. Calculate which future segment this lands in
-            uint32_t future_segment = sp.byte_index / segment_bytes;
-            sp.byte_index %= segment_bytes; // Localize byte index to that future segment
-            // 5. Push to the correct future bucket
-            push_to_bucket(&next_segment_buckets[future_segment], sp, pool);
-        }
-        current_node = current_node->next;
-    }
-}
-
 BucketPool* create_bucket_pool(uint32_t num_nodes) {
     BucketPool* pool = (BucketPool*)malloc(sizeof(BucketPool));
     if (!pool) return NULL;
@@ -82,28 +57,6 @@ inline void return_node_to_pool(BucketPool* pool, BucketNode* node) {
     node->next = pool->free_list;
     pool->free_list = node;
 }
-
-// Declare the 8 generated functions so this file knows they exist
-extern void cross_off_residue1(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue7(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue11(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue13(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue17(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue19(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue23(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-extern void cross_off_residue29(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
-
-// Map them to the 0-7 bit indexes
-const CrossOffFunc cross_off_funcs[8] = {
-    cross_off_residue1,  // Index 0
-    cross_off_residue7,  // Index 1
-    cross_off_residue11, // Index 2
-    cross_off_residue13, // Index 3
-    cross_off_residue17, // Index 4
-    cross_off_residue19, // Index 5
-    cross_off_residue23, // Index 6
-    cross_off_residue29  // Index 7
-};
 
 SieveSegment* create_segment(size_t cache_size) {
     SieveSegment* seg = (SieveSegment*)malloc(sizeof(SieveSegment));

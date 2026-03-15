@@ -8,7 +8,7 @@
 #define BUCKET_CAPACITY 1024
 
 // Define the signature for our unrolled functions
-typedef void (*CrossOffFunc)(uint8_t *restrict, uint32_t, SievingPrime *restrict);
+typedef void (*CrossOffFunc)(uint8_t *restrict, uint32_t, SievingPrime *restrict, uint32_t);
 
 // Declare the array so main.c can see it
 extern const CrossOffFunc cross_off_funcs[8];
