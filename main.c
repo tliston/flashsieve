@@ -101,18 +101,12 @@ int main(int argc, char** argv) {
                     uint8_t k_residue = 0;
                     uint64_t first_multiple = calculate_first_valid_multiple(p, absolute_seg_start, &k_residue);
                     uint64_t offset = first_multiple - absolute_seg_start;
-                    uint32_t p_k = p / 30;
-                    uint8_t p_b = map_remainder_to_bit_idx(p % 30);
+
+                    active_primes[active_prime_count].prime_k = p / 30;
                     active_primes[active_prime_count].byte_index = offset / 30;
-                    active_primes[active_prime_count].bit_index = map_remainder_to_bit_idx(first_multiple % 30);
+                    active_primes[active_prime_count].prime_bit_idx = map_remainder_to_bit_idx(p % 30);
                     active_primes[active_prime_count].wheel_index = map_remainder_to_bit_idx(k_residue);
-                    // PRECOMPUTE ALL 8 JUMPS FOR THIS PRIME
-                    for (int j = 0; j < 8; j++) {
-                        active_primes[active_prime_count].jumps[j] = 
-                            (wheel_gaps[j] * p_k) + wheel_table[p_b][j].byte_offset;
-                        active_primes[active_prime_count].next_bits[j] = 
-                            wheel_table[p_b][j].next_bit_idx;
-                    }
+
                     active_prime_count++;
                     next_base_prime_idx++;
                 }
@@ -121,7 +115,9 @@ int main(int argc, char** argv) {
                 memset(seg->array, 0xFF, segment_bytes); 
                 // We now ONLY loop over primes that are mathematically active
                 for (size_t i = 0; i < active_prime_count; i++) {
-                    cross_off_multiples_fast(seg->array, segment_bytes, &active_primes[i]);
+                    SievingPrime* sp = &active_primes[i];
+                    // Call the specific unrolled function for this prime's pattern!
+                    cross_off_funcs[sp->prime_bit_idx](seg->array, segment_bytes, sp);
                 }
                 // 3. MASK AND COUNT
                 if (seg_idx == total_segments - 1) {

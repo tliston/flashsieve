@@ -2,6 +2,30 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Declare the 8 generated functions so this file knows they exist
+extern void cross_off_residue1(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue7(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue11(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue13(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue17(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue19(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue23(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+extern void cross_off_residue29(uint8_t *restrict segment, uint32_t size, SievingPrime *restrict sp);
+
+// Map them to the 0-7 bit indexes
+const CrossOffFunc cross_off_funcs[8] = {
+    cross_off_residue1,  // Index 0
+    cross_off_residue7,  // Index 1
+    cross_off_residue11, // Index 2
+    cross_off_residue13, // Index 3
+    cross_off_residue17, // Index 4
+    cross_off_residue19, // Index 5
+    cross_off_residue23, // Index 6
+    cross_off_residue29  // Index 7
+};
+
+// (You can completely delete the old cross_off_multiples_fast function from this file!)
+
 SieveSegment* create_segment(size_t cache_size) {
     SieveSegment* seg = (SieveSegment*)malloc(sizeof(SieveSegment));
     if (!seg) return NULL;
@@ -21,25 +45,6 @@ void free_segment(SieveSegment* seg) {
     }
 }
 
-void cross_off_multiples_fast(uint8_t* segment_array, uint32_t segment_bytes, SievingPrime* sp) {
-    uint32_t byte_idx  = sp->byte_index;
-    uint8_t  bit_idx   = sp->bit_index;
-    uint8_t  wheel_idx = sp->wheel_index;
-
-    while (byte_idx < segment_bytes) {
-        // 1. Cross off the bit
-        segment_array[byte_idx] &= unset_bit[bit_idx];        
-        // 2. Fetch the precomputed jump and next bit directly from the struct
-        byte_idx += sp->jumps[wheel_idx];
-        bit_idx = sp->next_bits[wheel_idx];
-        
-        // 3. Advance the wheel
-        wheel_idx = (wheel_idx + 1) & 7; 
-    }
-    sp->byte_index  = byte_idx - segment_bytes;
-    sp->bit_index   = bit_idx;
-    sp->wheel_index = wheel_idx;
-}
 
 void mask_last_segment(uint8_t* segment_array, uint32_t segment_bytes, uint64_t limit, uint64_t segment_start_val) {
     if (limit < segment_start_val) {
