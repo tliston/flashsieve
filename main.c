@@ -5,6 +5,7 @@
 #include <math.h>
 #include <locale.h>
 #include <omp.h>
+#include <unistd.h>
 
 #include "cpuinfo.h"
 #include "sieve.h"
@@ -80,21 +81,43 @@ const uint8_t bit_idx_map[30] = {
 };
 
 int main(int argc, char **argv) {
-    uint64_t limit = 10000000000ULL;
-    if (argc > 1) {
-        limit = strtoull(argv[1], NULL, 10);
-    }
+    int opt, cache = 1;
+    CacheInfo myCI;
+    uint64_t cache_sz, limit = 10000000000ULL;
 
+    if(argc > 1) {
+        while ((opt = getopt(argc, argv, "L:h")) != -1) {
+            switch(opt){
+                case 'L':
+                    cache = atoi(optarg);
+                    if(cache > 2)
+                        cache = 1;
+                    break;
+                case 'h':
+                default:
+                    printf("flashsieve [-ch] [max]\n           -c <type>  Use cache type 1 or 2.\n           -h         This help.\n");
+                    exit(0);
+            }
+        }
+        if (optind < argc) {
+            limit = strtoull(argv[optind], NULL, 10);
+        }
+    }
     setlocale(LC_ALL, "");
 
-    size_t l1_cache_size = get_min_cache_size(1);
+    get_min_cache_size(cache, &myCI);
+    if(cache == 1)
+        cache_sz = (myCI.size / (myCI.share));
+    else
+        cache_sz = ((myCI.size / myCI.share) - 4192);
+
     uint64_t segment_bytes = 1;
-    while (segment_bytes * 2 <= l1_cache_size) {
+    while (segment_bytes * 2 <= cache_sz) {
         segment_bytes *= 2;
     }
 
     int num_threads = omp_get_max_threads();
-    printf("flashsieve v1.0 - tom.liston@bad-wolf-sec.com\nSieving to: %'lu\nSegment size: %'lu\nThreads: %u\n", limit, segment_bytes, num_threads);
+    printf("flashsieve v1.0 - tom.liston@bad-wolf-sec.com\nSieving to: %'lu\nUsing the L%i cache\nSegment size: %'lu\nThreads: %u\n", limit, cache, segment_bytes, num_threads);
 
     double start_time = omp_get_wtime();
 
@@ -124,7 +147,7 @@ int main(int argc, char **argv) {
         sp.prime_bit_idx = bit_idx_map[p % 30];
         sp.byte_index = p / 30; // First valid multiple is p * 1
         sp.wheel_index = 0;     // Multiplier 1 is at wheel index 0
-        
+
         // Use the native unrolled functions (unrolled_xoff.c) to build the pattern
         if (p == 7)  process_residue7 (pre_sieve_buffer, pattern_size, &sp, 1);
         if (p == 11) process_residue11(pre_sieve_buffer, pattern_size, &sp, 1);
@@ -132,9 +155,20 @@ int main(int argc, char **argv) {
         if (p == 17) process_residue17(pre_sieve_buffer, pattern_size, &sp, 1);
         if (p == 19) process_residue19(pre_sieve_buffer, pattern_size, &sp, 1);
     }
-    
-    // Copy the start of the pattern to the end to allow for seamless offset memcpys
-    memcpy(pre_sieve_buffer + pattern_size, pre_sieve_buffer, segment_bytes);
+
+    // Safely tile the pattern into the overflow area to handle massive L2 segment sizes
+    uint64_t bytes_copied = 0;
+    while (bytes_copied < segment_bytes) {
+        uint64_t bytes_to_copy = pattern_size;
+
+        // If the remaining space is smaller than the pattern, just copy what we need
+        if (bytes_copied + bytes_to_copy > segment_bytes) {
+            bytes_to_copy = segment_bytes - bytes_copied;
+        }
+
+        memcpy(pre_sieve_buffer + pattern_size + bytes_copied, pre_sieve_buffer, bytes_to_copy);
+        bytes_copied += bytes_to_copy;
+    }
     // -------------------------------
 
 #pragma omp parallel reduction(+:total_primes)

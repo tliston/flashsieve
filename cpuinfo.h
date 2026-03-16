@@ -6,6 +6,11 @@
 #include <stdint.h>
 #include <string.h>
 
-size_t get_min_cache_size(int);
+typedef struct {
+	size_t size;
+	size_t share;
+} CacheInfo;
+
+void get_min_cache_size(int, CacheInfo*);
 
 #endif // CPUINFO_H
