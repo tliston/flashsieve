@@ -7,7 +7,6 @@
 #include <omp.h>
 
 #include "cpuinfo.h"
-#include "wheel.h"
 #include "sieve.h"
 
 // Simple odds-only sieve to get our base primes up to sqrt(N)
@@ -21,7 +20,7 @@ uint32_t *generate_base_primes(uint64_t max_val, size_t *out_count) {
     uint8_t *is_composite = (uint8_t *) calloc(byte_array_size, sizeof(uint8_t));
     if (!is_composite)
         return NULL;
-    size_t prime_count = 1;                      // Start with 2
+    size_t prime_count = 1;                      
     for (size_t i = 0; i < byte_array_size; i++) {
         if (!is_composite[i]) {
             prime_count++;
@@ -45,7 +44,6 @@ uint32_t *generate_base_primes(uint64_t max_val, size_t *out_count) {
     return primes;
 }
 
-// Declare the 8 generated batch-processing functions
 extern void process_residue1(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
 extern void process_residue7(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
 extern void process_residue11(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
@@ -55,28 +53,26 @@ extern void process_residue19(uint8_t * restrict segment, uint32_t size, Sieving
 extern void process_residue23(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
 extern void process_residue29(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
 
-// Memory masks for clearing the exact bit in the Medium buckets
 const uint8_t mask_table[8][8] = {
-    {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F},   // Prime residue 1
-    {0xFD, 0xDF, 0xEF, 0xFE, 0x7F, 0xF7, 0xFB, 0xBF},   // Prime residue 7
-    {0xFB, 0xEF, 0xFE, 0xBF, 0xFD, 0x7F, 0xF7, 0xDF},   // Prime residue 11
-    {0xF7, 0xFE, 0xBF, 0xDF, 0xFB, 0xFD, 0x7F, 0xEF},   // Prime residue 13
-    {0xEF, 0x7F, 0xFD, 0xFB, 0xDF, 0xBF, 0xFE, 0xF7},   // Prime residue 17
-    {0xDF, 0xF7, 0x7F, 0xFD, 0xBF, 0xFE, 0xEF, 0xFB},   // Prime residue 19
-    {0xBF, 0xFB, 0xF7, 0x7F, 0xFE, 0xEF, 0xDF, 0xFD},   // Prime residue 23
-    {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE},   // Prime residue 29
+    {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F},   
+    {0xFD, 0xDF, 0xEF, 0xFE, 0x7F, 0xF7, 0xFB, 0xBF},   
+    {0xFB, 0xEF, 0xFE, 0xBF, 0xFD, 0x7F, 0xF7, 0xDF},   
+    {0xF7, 0xFE, 0xBF, 0xDF, 0xFB, 0xFD, 0x7F, 0xEF},   
+    {0xEF, 0x7F, 0xFD, 0xFB, 0xDF, 0xBF, 0xFE, 0xF7},   
+    {0xDF, 0xF7, 0x7F, 0xFD, 0xBF, 0xFE, 0xEF, 0xFB},   
+    {0xBF, 0xFB, 0xF7, 0x7F, 0xFE, 0xEF, 0xDF, 0xFD},   
+    {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE},   
 };
 
-// Byte offsets for the next jump calculation (Carry-over math)
 const uint8_t offset_table[8][8] = {
-    {0, 0, 0, 0, 0, 0, 0, 1},                    // Prime residue 1
-    {1, 1, 1, 0, 1, 1, 1, 1},                    // Prime residue 7
-    {2, 2, 0, 2, 0, 2, 2, 1},                    // Prime residue 11
-    {3, 1, 1, 2, 1, 1, 3, 1},                    // Prime residue 13
-    {3, 3, 1, 2, 1, 3, 3, 1},                    // Prime residue 17
-    {4, 2, 2, 2, 2, 2, 4, 1},                    // Prime residue 19
-    {5, 3, 1, 4, 1, 3, 5, 1},                    // Prime residue 23
-    {6, 4, 2, 4, 2, 4, 6, 1},                    // Prime residue 29
+    {0, 0, 0, 0, 0, 0, 0, 1},                    
+    {1, 1, 1, 0, 1, 1, 1, 1},                    
+    {2, 2, 0, 2, 0, 2, 2, 1},                    
+    {3, 1, 1, 2, 1, 1, 3, 1},                    
+    {3, 3, 1, 2, 1, 3, 3, 1},                    
+    {4, 2, 2, 2, 2, 2, 4, 1},                    
+    {5, 3, 1, 4, 1, 3, 5, 1},                    
+    {6, 4, 2, 4, 2, 4, 6, 1},                    
 };
 
 const uint8_t bit_idx_map[30] = {
@@ -92,9 +88,6 @@ int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
 
     size_t l1_cache_size = get_min_cache_size(1);
-
-    // Force segment_bytes down to the nearest Power of 2 to eliminate standard division
-    // within our high-performance loops
     uint64_t segment_bytes = 1;
     while (segment_bytes * 2 <= l1_cache_size) {
         segment_bytes *= 2;
@@ -105,7 +98,6 @@ int main(int argc, char **argv) {
 
     double start_time = omp_get_wtime();
 
-    // Precalculate the bitwise shift and mask values for Medium routing
     uint32_t seg_shift = __builtin_ctz(segment_bytes);
     uint32_t seg_mask = segment_bytes - 1;
     uint64_t numbers_per_segment = segment_bytes * 30;
@@ -113,14 +105,37 @@ int main(int argc, char **argv) {
 
     size_t base_prime_count = 0;
     uint32_t *base_primes = generate_base_primes(limit, &base_prime_count);
-
     uint64_t total_primes = (limit >= 5) ? 3 : 0;
-
-    // Small primes must jump less than half the segment to guarantee multiple hits
-    uint32_t small_prime_threshold = segment_bytes * 15;
-
-    // how many segments will we have each thread run
+    // A prime must jump less than the segment to guarantee multiple hits
+    uint32_t small_prime_threshold = segment_bytes * 3;
     uint64_t segments_per_thread = (total_segments + num_threads - 1) / num_threads;
+
+    // --- PRE-SIEVE GENERATION ---
+    // Generate the perfect 323KB repeating pattern for 7, 11, 13, 17, 19
+    uint32_t pattern_size = 7 * 11 * 13 * 17 * 19; 
+    uint8_t* pre_sieve_buffer = (uint8_t*)malloc(pattern_size + segment_bytes);
+    memset(pre_sieve_buffer, 0xFF, pattern_size + segment_bytes);
+    
+    uint32_t pre_primes[] = {7, 11, 13, 17, 19};
+    for (int i = 0; i < 5; i++) {
+        uint32_t p = pre_primes[i];
+        SievingPrime sp;
+        sp.prime_k = p / 30;
+        sp.prime_bit_idx = bit_idx_map[p % 30];
+        sp.byte_index = p / 30; // First valid multiple is p * 1
+        sp.wheel_index = 0;     // Multiplier 1 is at wheel index 0
+        
+        // Use the native unrolled functions (unrolled_xoff.c) to build the pattern
+        if (p == 7)  process_residue7 (pre_sieve_buffer, pattern_size, &sp, 1);
+        if (p == 11) process_residue11(pre_sieve_buffer, pattern_size, &sp, 1);
+        if (p == 13) process_residue13(pre_sieve_buffer, pattern_size, &sp, 1);
+        if (p == 17) process_residue17(pre_sieve_buffer, pattern_size, &sp, 1);
+        if (p == 19) process_residue19(pre_sieve_buffer, pattern_size, &sp, 1);
+    }
+    
+    // Copy the start of the pattern to the end to allow for seamless offset memcpys
+    memcpy(pre_sieve_buffer + pattern_size, pre_sieve_buffer, segment_bytes);
+    // -------------------------------
 
 #pragma omp parallel reduction(+:total_primes)
     {
@@ -134,15 +149,13 @@ int main(int argc, char **argv) {
             uint64_t thread_segment_count = end_seg - start_seg;
             SieveSegment *seg = create_segment(segment_bytes);
 
-            // Allocate 8 separate arrays for the small primes
             SievingPrime *small_primes[8];
             uint32_t small_counts[8] = { 0 };
             for (int i = 0; i < 8; i++)
                 small_primes[i] = (SievingPrime *) malloc(base_prime_count * sizeof(SievingPrime));
 
-            BucketNode **medium_buckets_heads = (BucketNode **) calloc(thread_segment_count, sizeof(BucketNode *));
-
-            // Reduced pool size to prevent 100 Billion limit Segfaults
+            // Circular buffer of 128 pointers (1KB, fits perfectly in L1)
+            BucketNode *medium_buckets_heads[128] = { NULL };
             BucketPool *pool = create_bucket_pool(1000);
             if (!pool) {
                 fprintf(stderr, "Thread %d: Failed to allocate bucket pool.\n", thread_id);
@@ -150,9 +163,9 @@ int main(int argc, char **argv) {
             }
 
             size_t next_base_prime_idx = 0;
-
-            // Skip 2, 3, and 5
-            while (next_base_prime_idx < base_prime_count && base_primes[next_base_prime_idx] <= 5) {
+            // --- SKIP PRE-SIEVED PRIMES ---
+            // Skip 2, 3, 5, 7, 11, 13, 17, 19
+            while (next_base_prime_idx < base_prime_count && base_primes[next_base_prime_idx] <= 19) {
                 next_base_prime_idx++;
             }
 
@@ -161,7 +174,6 @@ int main(int argc, char **argv) {
                 uint64_t absolute_seg_end = absolute_seg_start + numbers_per_segment;
                 uint64_t local_seg_idx = seg_idx - start_seg;
 
-                // 1. ACTIVATE PENDING PRIMES AND FORK THE ROAD
                 while (next_base_prime_idx < base_prime_count) {
                     uint32_t p = base_primes[next_base_prime_idx];
                     uint64_t p_squared = (uint64_t) p * p;
@@ -175,35 +187,42 @@ int main(int argc, char **argv) {
 
                     SievingPrime sp;
                     sp.prime_k = p / 30;
-
                     sp.prime_bit_idx = bit_idx_map[p % 30];
                     sp.wheel_index = bit_idx_map[k_residue];
 
                     if (p <= small_prime_threshold) {
-                        // EratSmall: Route directly to its specific residue array
                         sp.byte_index = offset / 30;
                         small_primes[sp.prime_bit_idx][small_counts[sp.prime_bit_idx]++] = sp;
                     } else {
-                        // EratMedium: Calculate future segment and push to bucket using bitwise math
                         uint64_t relative_start = first_multiple - (start_seg * numbers_per_segment);
-                        uint32_t total_bytes = relative_start / 30;
+                        uint64_t total_bytes = relative_start / 30;
                         uint64_t target_local_seg = total_bytes >> seg_shift;
-
                         if (target_local_seg < thread_segment_count) {
                             sp.byte_index = total_bytes & seg_mask;
-                            push_to_bucket(medium_buckets_heads[target_local_seg], sp, pool);
+                            push_to_bucket(&medium_buckets_heads[target_local_seg & 127], sp, pool);
                         }
                     }
                     next_base_prime_idx++;
                 }
 
-                memset(seg->array, 0xFF, segment_bytes);
+                // --- MEMCPY HEAD START ---
+                // Replace marking everything prime (0xFF) with the pre-calculated pattern
+                uint32_t offset = (absolute_seg_start / 30) % pattern_size;
+                memcpy(seg->array, pre_sieve_buffer + offset, segment_bytes);
 
-                // Fix the off-by-one error (1 is not a prime!)
-                if (seg_idx == 0)
-                    seg->array[0] &= 0xFE;
+                // Because our pattern physically crossed off 7, 11, 13, 17, 19, 
+                // we must manually flip them back to "prime" status in the first segment
+                if (seg_idx == 0) {
+                    seg->array[0] &= 0xFE; // 1 is not a prime
+                    seg->array[0] |= (1 << bit_idx_map[7]); 
+                    seg->array[0] |= (1 << bit_idx_map[11]);
+                    seg->array[0] |= (1 << bit_idx_map[13]);
+                    seg->array[0] |= (1 << bit_idx_map[17]);
+                    seg->array[0] |= (1 << bit_idx_map[19]);
+                }
+                // ----------------------------
 
-                // 2. ERAT SMALL (Batched direct execution!)
+                // SMALL primes 
                 process_residue1(seg->array, segment_bytes, small_primes[0], small_counts[0]);
                 process_residue7(seg->array, segment_bytes, small_primes[1], small_counts[1]);
                 process_residue11(seg->array, segment_bytes, small_primes[2], small_counts[2]);
@@ -212,48 +231,52 @@ int main(int argc, char **argv) {
                 process_residue19(seg->array, segment_bytes, small_primes[5], small_counts[5]);
                 process_residue23(seg->array, segment_bytes, small_primes[6], small_counts[6]);
                 process_residue29(seg->array, segment_bytes, small_primes[7], small_counts[7]);
+                // ----------------------------
 
-                // 3. ERAT MEDIUM (Branchless Bucket Logic + Zero-Latency Recycling)
-                BucketNode *current_node = medium_buckets_heads[local_seg_idx];
+                // MEDIUM primes
+                BucketNode *current_node = medium_buckets_heads[local_seg_idx & 127];
                 while (current_node != NULL) {
+                    if (current_node->next != NULL) {
+                        __builtin_prefetch(current_node->next, 0, 1); 
+                    }
                     for (uint32_t i = 0; i < current_node->count; i++) {
                         SievingPrime sp = current_node->primes[i];
 
-                        seg->array[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];
+                        // Process the prime as long as it stays in the current segment
+                        do {
+                            seg->array[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];
+                            
+                            uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];
+                            sp.byte_index += jump;
+                            sp.wheel_index = (sp.wheel_index + 1) & 7;
+                        } while (sp.byte_index < segment_bytes); // TRUE if it double-hits!
 
-                        uint32_t jump =
-                            (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];
-                        sp.byte_index += jump;
-                        sp.wheel_index = (sp.wheel_index + 1) & 7;
-
-                        // Bitwise segment routing
                         uint32_t segments_jumped = sp.byte_index >> seg_shift;
                         uint64_t target_local_seg = local_seg_idx + segments_jumped;
-
+                        
                         if (target_local_seg < thread_segment_count) {
                             sp.byte_index &= seg_mask;
-                            push_to_bucket(medium_buckets_heads[target_local_seg], sp, pool);
+                            push_to_bucket(&medium_buckets_heads[target_local_seg & 127], sp, pool);
                         }
                     }
-
                     BucketNode *next_node = current_node->next;
                     return_node_to_pool(pool, current_node);
                     current_node = next_node;
                 }
+                // Erase the pointer so it is clean for the next rotation
+                medium_buckets_heads[local_seg_idx & 127] = NULL;
+                // ----------------------------
 
-                medium_buckets_heads[local_seg_idx] = NULL;
-
-                // 4. MASK AND COUNT
+                // Fix up the final segment (so we're not counting beyond our limit)
                 if (seg_idx == total_segments - 1) {
                     mask_last_segment(seg->array, segment_bytes, limit, absolute_seg_start);
                 }
+
+                // Count 'em!
                 total_primes += count_primes_fast(seg->array, segment_bytes);
             }
 
-            for (int i = 0; i < 8; i++) {
-                free(small_primes[i]);
-            }
-            free(medium_buckets_heads);
+            for (int i = 0; i < 8; i++) free(small_primes[i]);
             free_bucket_pool(pool);
             free_segment(seg);
         }
@@ -264,5 +287,6 @@ int main(int argc, char **argv) {
     printf("Time elapsed: %f seconds\n", end_time - start_time);
 
     free(base_primes);
+    free(pre_sieve_buffer);
     return 0;
 }

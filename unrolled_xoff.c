@@ -1,4 +1,4 @@
-#include "wheel.h"
+#include "sieve.h"
 
 /**
  * Pattern 0: For primes where MOD30(p) == 1

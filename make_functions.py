@@ -3,7 +3,7 @@
 valid_residues = [1, 7, 11, 13, 17, 19, 23, 29]
 wheel_gaps = [6, 4, 2, 4, 2, 4, 6, 2]
 
-print('#include "wheel.h"\n')
+print('#include "sieve.h"\n')
 
 for p_idx, p_rem in enumerate(valid_residues):
     print(f"/**\n * Pattern {p_idx}: For primes where MOD30(p) == {p_rem}\n */")
