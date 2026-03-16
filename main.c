@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
     }
 
     int num_threads = omp_get_max_threads();
-    printf("Sieving to: %'lu\nSegment size: %'lu\nThreads: %u\n", limit, segment_bytes, num_threads);
+    printf("flashsieve v1.0 - tom.liston@bad-wolf-sec.com\nSieving to: %'lu\nSegment size: %'lu\nThreads: %u\n", limit, segment_bytes, num_threads);
 
     double start_time = omp_get_wtime();
 
