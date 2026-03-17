@@ -21,7 +21,7 @@ uint32_t *generate_base_primes(uint64_t max_val, size_t *out_count) {
     uint8_t *is_composite = (uint8_t *) calloc(byte_array_size, sizeof(uint8_t));
     if (!is_composite)
         return NULL;
-    size_t prime_count = 1;                      
+    size_t prime_count = 1;
     for (size_t i = 0; i < byte_array_size; i++) {
         if (!is_composite[i]) {
             prime_count++;
@@ -55,25 +55,25 @@ extern void process_residue23(uint8_t * restrict segment, uint32_t size, Sieving
 extern void process_residue29(uint8_t * restrict segment, uint32_t size, SievingPrime * restrict primes, uint32_t count);
 
 const uint8_t mask_table[8][8] = {
-    {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F},   
-    {0xFD, 0xDF, 0xEF, 0xFE, 0x7F, 0xF7, 0xFB, 0xBF},   
-    {0xFB, 0xEF, 0xFE, 0xBF, 0xFD, 0x7F, 0xF7, 0xDF},   
-    {0xF7, 0xFE, 0xBF, 0xDF, 0xFB, 0xFD, 0x7F, 0xEF},   
-    {0xEF, 0x7F, 0xFD, 0xFB, 0xDF, 0xBF, 0xFE, 0xF7},   
-    {0xDF, 0xF7, 0x7F, 0xFD, 0xBF, 0xFE, 0xEF, 0xFB},   
-    {0xBF, 0xFB, 0xF7, 0x7F, 0xFE, 0xEF, 0xDF, 0xFD},   
-    {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE},   
+    {0xFE, 0xFD, 0xFB, 0xF7, 0xEF, 0xDF, 0xBF, 0x7F},
+    {0xFD, 0xDF, 0xEF, 0xFE, 0x7F, 0xF7, 0xFB, 0xBF},
+    {0xFB, 0xEF, 0xFE, 0xBF, 0xFD, 0x7F, 0xF7, 0xDF},
+    {0xF7, 0xFE, 0xBF, 0xDF, 0xFB, 0xFD, 0x7F, 0xEF},
+    {0xEF, 0x7F, 0xFD, 0xFB, 0xDF, 0xBF, 0xFE, 0xF7},
+    {0xDF, 0xF7, 0x7F, 0xFD, 0xBF, 0xFE, 0xEF, 0xFB},
+    {0xBF, 0xFB, 0xF7, 0x7F, 0xFE, 0xEF, 0xDF, 0xFD},
+    {0x7F, 0xBF, 0xDF, 0xEF, 0xF7, 0xFB, 0xFD, 0xFE},
 };
 
 const uint8_t offset_table[8][8] = {
-    {0, 0, 0, 0, 0, 0, 0, 1},                    
-    {1, 1, 1, 0, 1, 1, 1, 1},                    
-    {2, 2, 0, 2, 0, 2, 2, 1},                    
-    {3, 1, 1, 2, 1, 1, 3, 1},                    
-    {3, 3, 1, 2, 1, 3, 3, 1},                    
-    {4, 2, 2, 2, 2, 2, 4, 1},                    
-    {5, 3, 1, 4, 1, 3, 5, 1},                    
-    {6, 4, 2, 4, 2, 4, 6, 1},                    
+    {0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 1, 1, 0, 1, 1, 1, 1},
+    {2, 2, 0, 2, 0, 2, 2, 1},
+    {3, 1, 1, 2, 1, 1, 3, 1},
+    {3, 3, 1, 2, 1, 3, 3, 1},
+    {4, 2, 2, 2, 2, 2, 4, 1},
+    {5, 3, 1, 4, 1, 3, 5, 1},
+    {6, 4, 2, 4, 2, 4, 6, 1},
 };
 
 const uint8_t bit_idx_map[30] = {
@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
                     break;
                 case 'h':
                 default:
-                    printf("flashsieve [-ch] [max]\n           -c <type>  Use cache type 1 or 2.\n           -h         This help.\n");
+                    printf("flashsieve v1.1\nUsage: flashsieve [-ch] [max]\n           -c <type>  Use cache type 1 or 2.\n           -h         This help.\n");
                     exit(0);
             }
         }
@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
     }
 
     int num_threads = omp_get_max_threads();
-    printf("flashsieve v1.0 - tom.liston@bad-wolf-sec.com\nSieving to: %'lu\nUsing the L%i cache\nSegment size: %'lu\nThreads: %u\n", limit, cache, segment_bytes, num_threads);
+    printf("flashsieve v1.1 - tom.liston@bad-wolf-sec.com\nSieving to: %'lu\nUsing the L%i cache\nSegment size: %'lu\nThreads: %u\n", limit, cache, segment_bytes, num_threads);
 
     double start_time = omp_get_wtime();
 
@@ -135,10 +135,10 @@ int main(int argc, char **argv) {
 
     // --- PRE-SIEVE GENERATION ---
     // Generate the perfect 323KB repeating pattern for 7, 11, 13, 17, 19
-    uint32_t pattern_size = 7 * 11 * 13 * 17 * 19; 
+    uint32_t pattern_size = 7 * 11 * 13 * 17 * 19;
     uint8_t* pre_sieve_buffer = (uint8_t*)malloc(pattern_size + segment_bytes);
     memset(pre_sieve_buffer, 0xFF, pattern_size + segment_bytes);
-    
+
     uint32_t pre_primes[] = {7, 11, 13, 17, 19};
     for (int i = 0; i < 5; i++) {
         uint32_t p = pre_primes[i];
@@ -244,11 +244,11 @@ int main(int argc, char **argv) {
                 uint32_t offset = (absolute_seg_start / 30) % pattern_size;
                 memcpy(seg->array, pre_sieve_buffer + offset, segment_bytes);
 
-                // Because our pattern physically crossed off 7, 11, 13, 17, 19, 
+                // Because our pattern physically crossed off 7, 11, 13, 17, 19,
                 // we must manually flip them back to "prime" status in the first segment
                 if (seg_idx == 0) {
                     seg->array[0] &= 0xFE; // 1 is not a prime
-                    seg->array[0] |= (1 << bit_idx_map[7]); 
+                    seg->array[0] |= (1 << bit_idx_map[7]);
                     seg->array[0] |= (1 << bit_idx_map[11]);
                     seg->array[0] |= (1 << bit_idx_map[13]);
                     seg->array[0] |= (1 << bit_idx_map[17]);
@@ -256,7 +256,7 @@ int main(int argc, char **argv) {
                 }
                 // ----------------------------
 
-                // SMALL primes 
+                // SMALL primes
                 process_residue1(seg->array, segment_bytes, small_primes[0], small_counts[0]);
                 process_residue7(seg->array, segment_bytes, small_primes[1], small_counts[1]);
                 process_residue11(seg->array, segment_bytes, small_primes[2], small_counts[2]);
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
                 BucketNode *current_node = medium_buckets_heads[local_seg_idx & 127];
                 while (current_node != NULL) {
                     if (current_node->next != NULL) {
-                        __builtin_prefetch(current_node->next, 0, 1); 
+                        __builtin_prefetch(current_node->next, 0, 1);
                     }
                     for (uint32_t i = 0; i < current_node->count; i++) {
                         SievingPrime sp = current_node->primes[i];
@@ -279,7 +279,7 @@ int main(int argc, char **argv) {
                         // Process the prime as long as it stays in the current segment
                         do {
                             seg->array[sp.byte_index] &= mask_table[sp.prime_bit_idx][sp.wheel_index];
-                            
+
                             uint32_t jump = (sp.prime_k * wheel_gaps[sp.wheel_index]) + offset_table[sp.prime_bit_idx][sp.wheel_index];
                             sp.byte_index += jump;
                             sp.wheel_index = (sp.wheel_index + 1) & 7;
@@ -287,7 +287,7 @@ int main(int argc, char **argv) {
 
                         uint32_t segments_jumped = sp.byte_index >> seg_shift;
                         uint64_t target_local_seg = local_seg_idx + segments_jumped;
-                        
+
                         if (target_local_seg < thread_segment_count) {
                             sp.byte_index &= seg_mask;
                             push_to_bucket(&medium_buckets_heads[target_local_seg & 127], sp, pool);
