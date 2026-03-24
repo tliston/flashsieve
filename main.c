@@ -127,7 +127,11 @@ int main(int argc, char **argv) {
     uint64_t total_segments = (limit / numbers_per_segment) + 1;
 
     size_t base_prime_count = 0;
-    uint32_t *base_primes = generate_base_primes(limit, &base_prime_count);
+    uint32_t *base_primes;
+    if((base_primes = generate_base_primes(limit, &base_prime_count)) == NULL) {
+        fprintf(stderr, "generate_base_primes() returned NULL\n");
+        exit(1);
+    }
     uint64_t total_primes = (limit >= 5) ? 3 : 0;
     // A prime must jump less than the segment to guarantee multiple hits
     uint32_t small_prime_threshold = segment_bytes * 3;

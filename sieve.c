@@ -30,18 +30,19 @@ uint64_t calculate_first_valid_multiple(uint32_t p, uint64_t chunk_start_val, ui
 }
 
 BucketPool *create_bucket_pool(uint32_t num_nodes) {
-    // calloc guarantees pool->free_list is initialized to NULL!
-    BucketPool *pool = (BucketPool *) calloc(1, sizeof(BucketPool));
+    // malloc used, so we must set pool->free_list to NULL
+    // malloc used, so we must set current_node to 0
+    BucketPool *pool = (BucketPool *) malloc(sizeof(BucketPool));
     if (!pool)
         return NULL;
-
-    pool->memory = (BucketNode *) calloc(num_nodes, sizeof(BucketNode));
+    pool->free_list = NULL;
+    pool->current_node = 0;
+    pool->total_nodes = num_nodes;
+    pool->memory = (BucketNode *) malloc(num_nodes * sizeof(BucketNode));
     if (!pool->memory) {
         free(pool);
         return NULL;
     }
-    pool->total_nodes = num_nodes;
-    pool->current_node = 0;
     return pool;
 }
 
