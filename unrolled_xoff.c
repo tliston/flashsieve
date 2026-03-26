@@ -9,14 +9,14 @@ void process_residue1(uint8_t *restrict segment, uint32_t size, SievingPrime *re
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 0;
-        uint32_t j1 = p_k * 4 + 0;
-        uint32_t j2 = p_k * 2 + 0;
-        uint32_t j3 = p_k * 4 + 0;
-        uint32_t j4 = p_k * 2 + 0;
-        uint32_t j5 = p_k * 4 + 0;
-        uint32_t j6 = p_k * 6 + 0;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6;
+        uint32_t j1 = sp->p_k4;
+        uint32_t j2 = sp->p_k2;
+        uint32_t j3 = sp->p_k4;
+        uint32_t j4 = sp->p_k2;
+        uint32_t j5 = sp->p_k4;
+        uint32_t j6 = sp->p_k6;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 1;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -213,14 +213,14 @@ void process_residue7(uint8_t *restrict segment, uint32_t size, SievingPrime *re
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 1;
-        uint32_t j1 = p_k * 4 + 1;
-        uint32_t j2 = p_k * 2 + 1;
-        uint32_t j3 = p_k * 4 + 0;
-        uint32_t j4 = p_k * 2 + 1;
-        uint32_t j5 = p_k * 4 + 1;
-        uint32_t j6 = p_k * 6 + 1;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 1;
+        uint32_t j1 = sp->p_k4 + 1;
+        uint32_t j2 = sp->p_k2 + 1;
+        uint32_t j3 = sp->p_k4;
+        uint32_t j4 = sp->p_k2 + 1;
+        uint32_t j5 = sp->p_k4 + 1;
+        uint32_t j6 = sp->p_k6 + 1;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 7;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -417,14 +417,14 @@ void process_residue11(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 2;
-        uint32_t j1 = p_k * 4 + 2;
-        uint32_t j2 = p_k * 2 + 0;
-        uint32_t j3 = p_k * 4 + 2;
-        uint32_t j4 = p_k * 2 + 0;
-        uint32_t j5 = p_k * 4 + 2;
-        uint32_t j6 = p_k * 6 + 2;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 2;
+        uint32_t j1 = sp->p_k4 + 2;
+        uint32_t j2 = sp->p_k2;
+        uint32_t j3 = sp->p_k4 + 2;
+        uint32_t j4 = sp->p_k2;
+        uint32_t j5 = sp->p_k4 + 2;
+        uint32_t j6 = sp->p_k6 + 2;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 11;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -621,14 +621,14 @@ void process_residue13(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 3;
-        uint32_t j1 = p_k * 4 + 1;
-        uint32_t j2 = p_k * 2 + 1;
-        uint32_t j3 = p_k * 4 + 2;
-        uint32_t j4 = p_k * 2 + 1;
-        uint32_t j5 = p_k * 4 + 1;
-        uint32_t j6 = p_k * 6 + 3;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 3;
+        uint32_t j1 = sp->p_k4 + 1;
+        uint32_t j2 = sp->p_k2 + 1;
+        uint32_t j3 = sp->p_k4 + 2;
+        uint32_t j4 = sp->p_k2 + 1;
+        uint32_t j5 = sp->p_k4 + 1;
+        uint32_t j6 = sp->p_k6 + 3;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 13;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -825,14 +825,14 @@ void process_residue17(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 3;
-        uint32_t j1 = p_k * 4 + 3;
-        uint32_t j2 = p_k * 2 + 1;
-        uint32_t j3 = p_k * 4 + 2;
-        uint32_t j4 = p_k * 2 + 1;
-        uint32_t j5 = p_k * 4 + 3;
-        uint32_t j6 = p_k * 6 + 3;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 3;
+        uint32_t j1 = sp->p_k4 + 3;
+        uint32_t j2 = sp->p_k2 + 1;
+        uint32_t j3 = sp->p_k4 + 2;
+        uint32_t j4 = sp->p_k2 + 1;
+        uint32_t j5 = sp->p_k4 + 3;
+        uint32_t j6 = sp->p_k6 + 3;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 17;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -1029,14 +1029,14 @@ void process_residue19(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 4;
-        uint32_t j1 = p_k * 4 + 2;
-        uint32_t j2 = p_k * 2 + 2;
-        uint32_t j3 = p_k * 4 + 2;
-        uint32_t j4 = p_k * 2 + 2;
-        uint32_t j5 = p_k * 4 + 2;
-        uint32_t j6 = p_k * 6 + 4;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 4;
+        uint32_t j1 = sp->p_k4 + 2;
+        uint32_t j2 = sp->p_k2 + 2;
+        uint32_t j3 = sp->p_k4 + 2;
+        uint32_t j4 = sp->p_k2 + 2;
+        uint32_t j5 = sp->p_k4 + 2;
+        uint32_t j6 = sp->p_k6 + 4;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 19;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -1233,14 +1233,14 @@ void process_residue23(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 5;
-        uint32_t j1 = p_k * 4 + 3;
-        uint32_t j2 = p_k * 2 + 1;
-        uint32_t j3 = p_k * 4 + 4;
-        uint32_t j4 = p_k * 2 + 1;
-        uint32_t j5 = p_k * 4 + 3;
-        uint32_t j6 = p_k * 6 + 5;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 5;
+        uint32_t j1 = sp->p_k4 + 3;
+        uint32_t j2 = sp->p_k2 + 1;
+        uint32_t j3 = sp->p_k4 + 4;
+        uint32_t j4 = sp->p_k2 + 1;
+        uint32_t j5 = sp->p_k4 + 3;
+        uint32_t j6 = sp->p_k6 + 5;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 23;
         uint32_t safe_limit = (size >= p) ? size - p : 0;
@@ -1437,14 +1437,14 @@ void process_residue29(uint8_t *restrict segment, uint32_t size, SievingPrime *r
         uint32_t p_k = sp->prime_k;
         uint32_t byte_idx = sp->byte_index;
 
-        uint32_t j0 = p_k * 6 + 6;
-        uint32_t j1 = p_k * 4 + 4;
-        uint32_t j2 = p_k * 2 + 2;
-        uint32_t j3 = p_k * 4 + 4;
-        uint32_t j4 = p_k * 2 + 2;
-        uint32_t j5 = p_k * 4 + 4;
-        uint32_t j6 = p_k * 6 + 6;
-        uint32_t j7 = p_k * 2 + 1;
+        uint32_t j0 = sp->p_k6 + 6;
+        uint32_t j1 = sp->p_k4 + 4;
+        uint32_t j2 = sp->p_k2 + 2;
+        uint32_t j3 = sp->p_k4 + 4;
+        uint32_t j4 = sp->p_k2 + 2;
+        uint32_t j5 = sp->p_k4 + 4;
+        uint32_t j6 = sp->p_k6 + 6;
+        uint32_t j7 = sp->p_k2 + 1;
 
         uint32_t p = (p_k * 30) + 29;
         uint32_t safe_limit = (size >= p) ? size - p : 0;

@@ -18,10 +18,12 @@ typedef struct {
 
 typedef struct {
     uint32_t prime_k;
+    uint32_t p_k2;
+    uint32_t p_k4;
+    uint32_t p_k6;
     uint32_t byte_index;
     uint8_t prime_bit_idx;
     uint8_t wheel_index;
-    uint8_t pad[6];
 } SievingPrime;
 
 // We use the perfectly aligned 16-byte SievingPrime struct

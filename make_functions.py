@@ -22,7 +22,21 @@ for p_idx, p_rem in enumerate(valid_residues):
         mask = (~(1 << bit_idx)) & 0xFF
         masks.append(mask)
         byte_offset = (current_rem + (p_rem * gap)) // 30
-        print(f"        uint32_t j{w_idx} = p_k * {gap} + {byte_offset};")
+        if gap == 2:
+            if byte_offset != 0:
+                print(f"        uint32_t j{w_idx} = sp->p_k2 + {byte_offset};")
+            else:
+                print(f"        uint32_t j{w_idx} = sp->p_k2;")
+        if gap == 4:
+            if byte_offset != 0:
+                print(f"        uint32_t j{w_idx} = sp->p_k4 + {byte_offset};")
+            else:
+                print(f"        uint32_t j{w_idx} = sp->p_k4;")
+        if gap == 6:
+            if byte_offset != 0:
+                print(f"        uint32_t j{w_idx} = sp->p_k6 + {byte_offset};")
+            else:
+                print(f"        uint32_t j{w_idx} = sp->p_k6;")
         
     print(f"\n        uint32_t p = (p_k * 30) + {p_rem};")
     print("        uint32_t safe_limit = (size >= p) ? size - p : 0;\n")

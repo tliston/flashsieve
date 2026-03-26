@@ -148,6 +148,11 @@ int main(int argc, char **argv) {
         uint32_t p = pre_primes[i];
         SievingPrime sp;
         sp.prime_k = p / 30;
+
+        sp.p_k2 = sp.prime_k * 2;
+        sp.p_k4 = sp.prime_k * 4;
+        sp.p_k6 = sp.prime_k * 6;
+
         sp.prime_bit_idx = bit_idx_map[p % 30];
         sp.byte_index = p / 30; // First valid multiple is p * 1
         sp.wheel_index = 0;     // Multiplier 1 is at wheel index 0
@@ -225,6 +230,9 @@ int main(int argc, char **argv) {
 
                     SievingPrime sp;
                     sp.prime_k = p / 30;
+                    sp.p_k2 = sp.prime_k * 2;
+                    sp.p_k4 = sp.prime_k * 4;
+                    sp.p_k6 = sp.prime_k * 6;
                     sp.prime_bit_idx = bit_idx_map[p % 30];
                     sp.wheel_index = bit_idx_map[k_residue];
 
