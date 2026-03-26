@@ -83,7 +83,7 @@ const uint8_t bit_idx_map[30] = {
 int main(int argc, char **argv) {
     int opt, cache = 1;
     CacheInfo myCI;
-    uint64_t cache_sz, limit = 10000000000ULL;
+    uint64_t segment_bytes, limit = 10000000000ULL;
 
     if(argc > 1) {
         while ((opt = getopt(argc, argv, "L:h")) != -1) {
@@ -106,14 +106,10 @@ int main(int argc, char **argv) {
     setlocale(LC_ALL, "");
 
     get_min_cache_size(cache, &myCI);
-    if(cache == 1)
-        cache_sz = (myCI.size / (myCI.share));
-    else
-        cache_sz = ((myCI.size / myCI.share) - 4192);
-
-    uint64_t segment_bytes = 1;
-    while (segment_bytes * 2 <= cache_sz) {
-        segment_bytes *= 2;
+    segment_bytes = (myCI.size / (myCI.share));
+    if(cache != 1) {
+        if(segment_bytes > (2 * (1024 * 128)))
+        segment_bytes -= (1024 * 128);
     }
 
     int num_threads = omp_get_max_threads();
