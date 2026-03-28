@@ -108,8 +108,8 @@ int main(int argc, char **argv) {
     get_min_cache_size(cache, &myCI);
     segment_bytes = (myCI.size / (myCI.share));
     if(cache != 1) {
-        if(segment_bytes > (2 * (1024 * 128)))
-        segment_bytes -= (1024 * 128);
+        if(segment_bytes > (1024 * 256))
+            segment_bytes -= (1024 * 128);
     }
 
     int num_threads = omp_get_max_threads();
